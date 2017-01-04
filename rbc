@@ -36,7 +36,9 @@ usage () {
 email_owner () {
     [ $REBOOT_REQUIRED -eq 0 ] && SUBJECT="${HOSTNAME}: reboot not required"
     [ $REBOOT_REQUIRED -eq 1 ] && SUBJECT="${HOSTNAME}: reboot requried"
-    [ $REBOOT_ALLOWED -eq 1 ] && SUBJECT="*** ${HOSTNAME} will reboot in 30 minutes ***"
+    if [[ $REBOOT_ALLOWED -eq 1 && $REBOOT_REQUIRED -eq 1 ]]; then
+	SUBJECT="*** ${HOSTNAME} will reboot in 30 minutes ***"
+    fi
     
     mail -s "${SUBJECT}" reboots@localhost < "${1}"
 }
