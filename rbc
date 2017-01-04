@@ -1,0 +1,112 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+
+DEAD_FILES=0
+EMAIL_OWNER=0
+QUIET=0
+REBOOT_ALLOWED=0
+REBOOT_REQUIRED=0
+SYSLOG=0
+
+die () {
+    printf "Error, exiting: " 1>&2
+    echo $@ 1>&2
+    exit 255
+}
+
+syslogit () {
+    logger -t rbc -p auth.warning -f "${1}"
+}
+
+usage () {
+    printf "$0 usage summary:\n" 1>&2
+    printf "   -h: (or --help) print usage summary\n" 1>&2
+    printf "   -l: log to SYSLOG facilities\n" 1>&2
+    printf "   -m: email reboots@localhost (set the alias to email externally)\n" 1>&2
+    printf "   -q: suppress output to STDOUT\n" 1>&2
+    printf "   -r: reboot the system in 30 minutes if reboot is required, -l is forced\n\n" 1>&2
+    printf "   EXIT codes:\n" 1>&2
+    printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
+    printf "%14s %-70s\n" "1:" "reboot required" 1>&2
+    printf "%14s %-70s\n" "254:" "printed help summary and exited" 1>&2
+    printf "%14s %-70s\n" "255:" "failed to run due to other error" 1>&2
+}
+
+email_owner () {
+    [ $REBOOT_REQUIRED -eq 0 ] && SUBJECT="${HOSTNAME}: reboot not required"
+    [ $REBOOT_REQUIRED -eq 1 ] && SUBJECT="${HOSTNAME}: reboot requried"
+    [ $REBOOT_ALLOWED -eq 1 ] && SUBJECT="*** ${HOSTNAME} will reboot in 30 minutes ***"
+    
+    mail -s "${SUBJECT}" reboots@localhost < "${1}"
+}
+
+for X in mail hostname lsof wc column awk rpm sed head uname dd tr cut date logger shutdown; do
+    which "${X}" >/dev/null 2>&1 || die "required application ${X} not found"
+done
+
+DATEY="$(date +%Y%m%d-%H%M%S)"
+HOSTNAME="$(hostname -s)"
+TMPFILE=/tmp/"$(dd if=/dev/urandom bs=1 count=256 2>/dev/null |tr -c -d '0-9a-f' |cut -c-7)"
+
+for X in ${1:+"$@"}; do
+    case "${X}" in
+	-l)
+	    SYSLOG=1
+	    ;;
+	-m)
+	    EMAIL_OWNER=1
+	    ;;
+	-r)
+	    REBOOT_ALLOWED=1
+	    SYSLOG=1
+	    ;;
+	-q)
+	    QUIET=1
+	    ;;
+	(-h|--help)
+	    usage
+	    exit 254
+	    ;;
+	*)
+	    usage
+	    die "invalid parameter: ${X}"
+	    ;;	   
+    esac
+done
+
+[ $TMPFILE == "/tmp/" ] && die
+echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
+lsof +c0 -d DEL 2>/dev/null | \
+    grep -v '\s/SYSV\|/\[aio\]$\|/dev/shm/.\+\|DEL.\+/tmp/.\+\|/var/lib/sss/mc/\(initgroups\|passwd\)' \
+    |awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
+
+if [ $(cat ${TMPFILE} |wc -l) -gt 2 ]; then
+    DEAD_FILES=1
+    REBOOT_REQUIRED=1
+else
+    echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
+fi
+
+C_KERN="kernel-$(uname -r)"
+A_KERN="$(rpm -q --last kernel |head -1 |sed 's|\s\+.*$||')"
+
+if [ $A_KERN != $C_KERN ]; then
+    REBOOT_REQUIRED=1
+    printf "Running $C_KERN, but $A_KERN available\n" >> "${TMPFILE}"
+fi
+
+echo "### ${HOSTNAME}: End of reboot automation notice: ${DATEY} ###" >> "${TMPFILE}"
+
+[ $REBOOT_REQUIRED -eq 0 ] && printf "\t ${HOSTNAME}: Reboot is not required.\n" > "${TMPFILE}"
+[ $SYSLOG -eq 1 ] && syslogit "${TMPFILE}"
+[ $EMAIL_OWNER -eq 1 ] && email_owner "${TMPFILE}"
+[ $QUIET -eq 0 ] && cat "${TMPFILE}"
+
+[ -f "${TMPFILE}" ] && rm -f "${TMPFILE}"
+
+if [ $REBOOT_REQUIRED -ne 0 ]; then
+    [ $REBOOT_ALLOWED -eq 1 ] && shutdown -r +30 "System reboot is required.  To cancel use shutdown -c.  But don't because this system needs to be rebooted"
+fi
+
+exit $REBOOT_REQUIRED
