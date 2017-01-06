@@ -15,7 +15,7 @@ round() {
 CT="$(date +%Y%m%d\ %H:%M:%S)"
 
 for ((X=0;X<15;X++)) ; do
-    RTT[$X]=$(/usr/bin/time -f %e dig @${1} edan.si.edu +short 2>&1 >/dev/null)
+    RTT[$X]=$(/usr/bin/time -f %e dig @${1} google.com +short 2>&1 >/dev/null)
 done
 
 #get sum & other stuff
