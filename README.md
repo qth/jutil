@@ -12,3 +12,11 @@ DevOps Utilities You May Find Useful
    * A separate IPSec SA is created between each of the hosts listed in the input file
    * Growth is #conf_items = (num_hosts*(num_hosts-1))/2
    * Tested on RHEL 7
+
+3. dnscheck
+   * This is a simple utility designed to check DNS server health over time
+   * Output can be graphed with gnuplot
+   * Designed to be run from cron and STDOUT redirected to a file:
+   
+    ```*/5 * * * *  /home/user/bin/dnscheck <DNS SERVER IP> >> /home/user/bin/dns-stats```
+    
