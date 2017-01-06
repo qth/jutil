@@ -1,0 +1,2 @@
+/usr/bin/yum -R 45 -e 0 -d 0 -y upgrade yum
+/usr/bin/yum -e 0 -d 0 -y upgrade
