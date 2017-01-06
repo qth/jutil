@@ -20,3 +20,10 @@ DevOps Utilities You May Find Useful
    
     ```*/5 * * * *  /home/user/bin/dnscheck <DNS SERVER IP> >> /home/user/bin/dns-stats```
     
+4. yum.upgrade
+   * Stupid simple method to update all packages on a RHEL / CentOS machine
+   * Why? Because 'yum-cron' has only hourly or daily schedules, at fixed times
+   * This can be called from cron at any schedule cron can perform, e.g.:
+
+   ```00 07  *  *  *  root  /usr/local/libexec/yum.upgrade```
+
