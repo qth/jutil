@@ -27,3 +27,4 @@ DevOps Utilities You May Find Useful
 
    ```00 07  *  *  *  root  /usr/local/libexec/yum.upgrade```
 
+   * Works on RHEL & CentOS 5, 6, & 7, the same way
