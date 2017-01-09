@@ -25,10 +25,12 @@ usage () {
     printf "   -l: log to SYSLOG facilities\n" 1>&2
     printf "   -m: email reboots@localhost (set the alias to email externally)\n" 1>&2
     printf "   -q: suppress output to STDOUT\n" 1>&2
-    printf "   -r: reboot the system in 30 minutes if reboot is required, -l is forced\n\n" 1>&2
+    printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n\n" 1>&2
     printf "   EXIT codes:\n" 1>&2
     printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
-    printf "%14s %-70s\n" "1:" "reboot required" 1>&2
+    printf "%14s %-70s\n" "1:" "reboot required, kernel only" 1>&2
+    printf "%14s %-70s\n" "2:" "reboot required, processes only" 1>&2
+    printf "%14s %-70s\n" "3:" "reboot required, kernel & processes" 1>&2
     printf "%14s %-70s\n" "254:" "printed help summary and exited" 1>&2
     printf "%14s %-70s\n" "255:" "failed to run due to other error" 1>&2
 }
@@ -88,7 +90,7 @@ lsof +c0 -d DEL 2>/dev/null | \
 
 if [ $(cat ${TMPFILE} |wc -l) -gt 2 ]; then
     DEAD_FILES=1
-    REBOOT_REQUIRED=1
+    (( REBOOT_REQUIRED+=2 ))
 else
     echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
 fi
@@ -97,7 +99,7 @@ C_KERN="kernel-$(uname -r)"
 A_KERN="$(rpm -q --last kernel |head -1 |sed 's|\s\+.*$||')"
 
 if [ $A_KERN != $C_KERN ]; then
-    REBOOT_REQUIRED=1
+    (( REBOOT_REQUIRED++ ))
     printf "Running $C_KERN, but $A_KERN available\n" >> "${TMPFILE}"
 fi
 
