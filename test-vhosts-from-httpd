@@ -1,0 +1,24 @@
+#!/bin/bash
+# 2016-10-26 James Boyle
+#  This program is meant to test connectivity to virtual hosts as listed
+#  by httpd -t -D DUMP_VHOSTS |grep -v default\ server |sed 's|^\s\+||;s| (/.*$||;s|^port 80 namevhost |http://|;s|^port 443 namevhost |https://|'
+
+HTTPS=0
+ALIAS=0
+IFS=$'\n'
+[ -f $1 ] || exit 1
+printf "%-48s : %3s : %5s \n" "URL" "ST" "ALIAS"
+for X in $(cat $1); do
+    [[ "${X}" =~ ^http ]] && HTTPS=0
+    [[ "${X}" =~ ^https ]] && HTTPS=1
+    if [[ "${X}" =~ ^alias ]]; then
+        [[ $HTTPS == 1 ]] && X=$(sed 's|alias |https://|' <<< $X)
+        [[ $HTTPS == 0 ]] && X=$(sed 's|alias |http://|' <<< $X)
+	ALIAS=1
+    else
+	ALIAS=0
+    fi
+    printf "%-48s : " "${X}"
+    HTTPSTATUS=$(curl -L --connect-timeout 2 -s -o /dev/null -w "%{http_code}" "${X}")
+    printf "%3s : %5s\n" "${HTTPSTATUS}" "${ALIAS}"
+done
