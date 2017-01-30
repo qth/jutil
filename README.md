@@ -28,3 +28,10 @@ DevOps Utilities You May Find Useful
    ```00 07  *  *  *  root  /usr/local/libexec/yum.upgrade```
 
    * Works on RHEL & CentOS 5, 6, & 7, the same way
+
+5. test-vhosts-from-httpd
+   * Much like it sounds
+   * use the shell command commented out at the top of the script to gather what vhosts are provided
+   * using that saved information, you can run this script elsewhere to test all those vhosts
+   * not perfect, but a sanity check to say, this is what happened before and after
+
