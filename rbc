@@ -124,7 +124,9 @@ if [ $REBOOT_REQUIRED -ne 0 ]; then
 fi
 
 if [ $SUMMARY -eq 1 ] ; then
-    printf "${HOSTNAME},$(cat /etc/redhat-release),$(uptime -s),${REBOOT_REQUIRED}\n"
+    # get the following the hard way since RHEL 6 uptime does not have the -s flag :(
+    UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
+    printf "${HOSTNAME},$(cat /etc/redhat-release),${UPSINCE},${REBOOT_REQUIRED}\n"
 fi
 
 exit $REBOOT_REQUIRED
