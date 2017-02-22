@@ -7,6 +7,7 @@ EMAIL_OWNER=0
 QUIET=0
 REBOOT_ALLOWED=0
 REBOOT_REQUIRED=0
+SUMMARY=0
 SYSLOG=0
 
 die () {
@@ -25,7 +26,9 @@ usage () {
     printf "   -l: log to SYSLOG facilities\n" 1>&2
     printf "   -m: email reboots@localhost (set the alias to email externally)\n" 1>&2
     printf "   -q: suppress output to STDOUT\n" 1>&2
-    printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n\n" 1>&2
+    printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n" 1>&2
+    printf "   -s: print a one line status summary in CSV, with the following format\n"
+    printf "        hostname, OS release, uptime, RBC status code\n" 1>&2
     printf "   EXIT codes:\n" 1>&2
     printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
     printf "%14s %-70s\n" "1:" "reboot required, kernel only" 1>&2
@@ -61,12 +64,16 @@ for X in ${1:+"$@"}; do
 	-m)
 	    EMAIL_OWNER=1
 	    ;;
+	-q)
+	    QUIET=1
+	    ;;
 	-r)
 	    REBOOT_ALLOWED=1
 	    SYSLOG=1
 	    ;;
-	-q)
+	-s)
 	    QUIET=1
+	    SUMMARY=1
 	    ;;
 	(-h|--help)
 	    usage
@@ -114,6 +121,10 @@ echo "### ${HOSTNAME}: End of reboot automation notice: ${DATEY} ###" >> "${TMPF
 
 if [ $REBOOT_REQUIRED -ne 0 ]; then
     [ $REBOOT_ALLOWED -eq 1 ] && shutdown -r +30 "System reboot is required.  To cancel use shutdown -c.  But don't because this system needs to be rebooted"
+fi
+
+if [ $SUMMARY -eq 1 ] ; then
+    printf "${HOSTNAME},$(cat /etc/redhat-release),$(uptime -s),${REBOOT_REQUIRED}\n"
 fi
 
 exit $REBOOT_REQUIRED
