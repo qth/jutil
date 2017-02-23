@@ -2,7 +2,6 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
 
-DEAD_FILES=0
 EMAIL_OWNER=0
 QUIET=0
 REBOOT_ALLOWED=0
@@ -12,7 +11,7 @@ SYSLOG=0
 
 die () {
     printf "Error, exiting: " 1>&2
-    echo $@ 1>&2
+    echo "$@" 1>&2
     exit 255
 }
 
@@ -21,7 +20,8 @@ syslogit () {
 }
 
 usage () {
-    printf "$0 usage summary:\n" 1>&2
+    printf "%s" "$0" 1>&2
+    printf " usage summary:\n" 1>&2
     printf "   -h: (or --help) print usage summary\n" 1>&2
     printf "   -l: log to SYSLOG facilities\n" 1>&2
     printf "   -m: email reboots@localhost (set the alias to email externally)\n" 1>&2
@@ -86,7 +86,7 @@ for X in ${1:+"$@"}; do
     esac
 done
 
-[ $TMPFILE == "/tmp/" ] && die
+[ "$TMPFILE" == "/tmp/" ] && die
 echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
 lsof +c0 -d DEL 2>/dev/null | \
     grep -v '\s/SYSV\|/\[aio\]$\|/dev/shm/.\+\|DEL.\+/tmp/.\+\|/var/lib/sss/mc/\(initgroups\|passwd\)' | \
@@ -95,8 +95,7 @@ lsof +c0 -d DEL 2>/dev/null | \
     grep -v 'tuned.*DEL.*/ffi\|firewalld.*DEL.*/run/ffi' | \
     awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
 
-if [ $(cat ${TMPFILE} |wc -l) -gt 2 ]; then
-    DEAD_FILES=1
+if [ "$(wc -l < ${TMPFILE})" -gt 2 ]; then
     (( REBOOT_REQUIRED+=2 ))
 else
     echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
@@ -105,14 +104,14 @@ fi
 C_KERN="kernel-$(uname -r)"
 A_KERN="$(rpm -q --last kernel |head -1 |sed 's|\s\+.*$||')"
 
-if [ $A_KERN != $C_KERN ]; then
+if [ "$A_KERN" != "$C_KERN" ]; then
     (( REBOOT_REQUIRED++ ))
-    printf "Running $C_KERN, but $A_KERN available\n" >> "${TMPFILE}"
+    printf "Running %s, but %s available\n" "$C_KERN" "$A_KERN" >> "${TMPFILE}"
 fi
 
 echo "### ${HOSTNAME}: End of reboot automation notice: ${DATEY} ###" >> "${TMPFILE}"
 
-[ $REBOOT_REQUIRED -eq 0 ] && printf "\t ${HOSTNAME}: Reboot is not required.\n" > "${TMPFILE}"
+[ $REBOOT_REQUIRED -eq 0 ] && printf "\t %s: Reboot is not required.\n" "${HOSTNAME}" > "${TMPFILE}"
 [ $SYSLOG -eq 1 ] && syslogit "${TMPFILE}"
 [ $EMAIL_OWNER -eq 1 ] && email_owner "${TMPFILE}"
 [ $QUIET -eq 0 ] && cat "${TMPFILE}"
@@ -126,7 +125,7 @@ fi
 if [ $SUMMARY -eq 1 ] ; then
     # get the following the hard way since RHEL 6 uptime does not have the -s flag :(
     UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
-    printf "${HOSTNAME},$(cat /etc/redhat-release),${UPSINCE},${REBOOT_REQUIRED}\n"
+    printf "%s,%s,%s,%s\n" "${HOSTNAME}" "$(cat /etc/redhat-release)" "${UPSINCE}" "${REBOOT_REQUIRED}"
 fi
 
 exit $REBOOT_REQUIRED
