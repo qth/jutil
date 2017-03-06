@@ -12,23 +12,23 @@ usage () {
     printf "%s usage summary:\n" "$0" 1>&2
     printf "   %s [ -i <inventory file> ] [-e <email address> ] [ -o <output file> ]\n" "$0" 1>&2
     printf "   -e: email a copy of the results to the specified address\n" 1>&2
+    printf "       the email option disables -o and implies -t output in the message body\n" 1>&2
     printf "   -h: print this usage summary\n" 1>&2
     printf "   -i: inventory file ; a list of hosts, one per line\n" 1>&2
     printf "   -o: write output to a file\n" 1>&2
     printf "   -t: generate tabular STDOUT from output file, requires -o\n" 1>&2
 }
 
-email_results () {
-    mail -s "${SUBJECT}" "${2}" < "${1}"
-}
-
-for X in getopt mail hostname lsof wc column awk rpm sed head uname dd tr cut date logger shutdown; do
+for X in getopt mail hostname lsof wc column awk rpm sed head uname dd tr cut \
+          date logger shutdown base64; do
     which "${X}" >/dev/null 2>&1 || die "required application ${X} not found"
 done
 
-DATEY="$(date +%Y-%m-%d\ %H:%M:%S)"
+DATEY="$(date +%Y-%m-%d\T%H:%M:%S)"
+DATEM="$(date -R)"
 HOSTNAME="$(hostname)"
-#TMPFILE=/tmp/"$(dd if=/dev/urandom bs=1 count=256 2>/dev/null |tr -c -d '0-9a-f' |cut -c-7)"
+SENDER="RBC Collector <DoNotReply>"
+TMPFILE=/tmp/"$(dd if=/dev/urandom bs=1 count=256 2>/dev/null |tr -c -d '0-9a-f' |cut -c-7)"
 INVENTORY="localhost"
 OFILE=""
 TABULATE=0
@@ -73,19 +73,24 @@ while [[ $1 != "--" ]] ; do
     shift
 done
 
-if [ -n "${OFILE}" ]; then
-    exec 5>&1 > "${OFILE}" || die "error writing to output file ${OFILE}"
-else
-    [ $TABULATE -eq 1 ] && die "output file not specified and is required for tabular output"
+[ -n "${OFILE}" ] && [ $TABULATE -eq 1 ] && die "output file not specified and is required for tabular output"
+
+if [ -n $EMAIL ]; then
+    mkdir "${TMPFILE}"
+    OFILE="${TMPFILE}/${DATEY}.csv"
+    TABULATE=1
 fi
 
-#printf "EMAIL=%s,INVENTORY=%s,OUTPUT=%s\n" "$EMAIL" "$INVENTORY" "$OFILE" 1>&2
+if [ -n "${OFILE}" ]; then
+    exec 5>&1 > "${OFILE}" || die "error writing to output file ${OFILE}"
+fi
+
 printf "RBC status inquiry initiated %s from %s\n" "${DATEY}" "${HOSTNAME}"
 printf "Hostname,OS Version,Up Since,RBC Status\n"
 
 if [ "$INVENTORY" != "localhost" ] ; then
     [ -s "${INVENTORY}" ] || die "bad inventory file"
-    for X in $(cat "$INVENTORY"); do
+    for X in $(grep -v '^\s*#' "$INVENTORY"); do
 	ssh "${X}" sudo /usr/local/sbin/rbc -s 2>/dev/null
 	[ $? -eq 255 ] && printf "%s,ERROR,ERROR,ERROR\n" "${X}"
     done
@@ -93,8 +98,34 @@ else
     ssh "${INVENTORY}" sudo /usr/local/sbin/rbc -s 2>/dev/null
 fi
 
+if [ -n "$EMAIL" ]; then
+    RANDY="$(dd if=/dev/urandom bs=3 count=171 2>/dev/null |tr -c -d '0-9a-zA-Z' |cut -c-32)" || die "error generating boundary"
+    printf "From: RBC@%s\n" "${HOSTNAME}" > "${OFILE}.mail"
+    printf "To: %s\n" "${EMAIL}" >> "${OFILE}.mail"
+    printf "Subject: Gathered RBC Status, %s\n" "${DATEY}" >> "${OFILE}.mail"
+    printf "Date: %s\n" "${DATEM}" >> "${OFILE}.mail"
+    printf "MIME-Version: 1.0\nContent-Type: multipart/mixed;\n\tboundary=\"{%s}\"\n" "${RANDY}" >> "${OFILE}.mail"
+    printf "X-MS-Has-Attach: yes\n" >> "${OFILE}.mail"
+    printf "\n\n--{%s}\n" "${RANDY}" >> "${OFILE}.mail"
+    printf "Content-Type: text/html\n\n" >> "${OFILE}.mail"
+    printf "<html><body><pre style=\"font: monospace\">\n" >> "${OFILE}.mail"
+    head -1 "${OFILE}" >> "${OFILE}.mail"
+    printf "\n" >> "${OFILE}.mail"
+    sed '1d' "${OFILE}" |column -t -s, >> "${OFILE}.mail"
+    printf "</pre></body></html>\n\n" >> "${OFILE}.mail"
+    printf "\n\n--{%s}\n" "${RANDY}" >> "${OFILE}.mail"
+    printf "Content-Type: text/csv;\n\tname=\"rbc-status-%s.csv\"\n" "${DATEY}" >> "${OFILE}.mail"
+    printf "Content-Transfer-Encoding: base64\nContent-Disposition: attachment;\n" >> "${OFILE}.mail"
+    printf "\tfilename=\"rbc-status-%s.csv\"\n\n" "${DATEY}" >> "${OFILE}.mail"
+    base64 "${OFILE}" >> "${OFILE}.mail"
+    printf "\n--{%s}\n" "${RANDY}" >> "${OFILE}.mail"
+    sendmail -t < "${OFILE}.mail"
+    rm -f "${OFILE}.mail" "${OFILE}"
+    rmdir "${TMPFILE}"
+fi
+
 [ -n "${OFILE}" ] && exec 1>&5
-if [ $TABULATE -eq 1 ]; then
+if [ $TABULATE -eq 1 -a -z $EMAIL ]; then
     head -1 "${OFILE}"
     sed '1d' "${OFILE}" |column -t -s,
 fi
