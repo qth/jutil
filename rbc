@@ -88,7 +88,7 @@ done
 
 [ "$TMPFILE" == "/tmp/" ] && die
 echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
-lsof +c0 -d DEL 2>/dev/null | \
+lsof +c0 -b -d DEL 2>/dev/null | \
     grep -v '\s/SYSV\|/\[aio\]$\|/dev/shm/.\+\|DEL.\+/tmp/.\+\|/var/lib/sss/mc/\(initgroups\|passwd\)' | \
     grep -v 'DEL.*\.config/dconf/user$\|DEL.*/run/user/.*/dconf/user$\|pulseaudio.*DEL.*/run/user' | \
     grep -v 'Xwayland.*DEL.*/run/user/[0-9]\|java.*DEL.*/var/crashplan/jna-.*tmp$\|caja.*DEL.*gvfs-metadata' | \
