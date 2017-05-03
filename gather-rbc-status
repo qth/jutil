@@ -93,7 +93,7 @@ printf "Hostname,OS Version,Up Since,RBC Status\n"
 
 if [ "$INVENTORY" != "localhost" ] ; then
     [ -s "${INVENTORY}" ] || die "bad inventory file"
-    for X in $(grep -v '^\s*#' "$INVENTORY"); do
+    for X in $(grep -v '^\s*#\|^\s*$' "$INVENTORY"); do
 	ssh "${X}" sudo /usr/local/sbin/rbc -s 2>/dev/null
 	[ $? -eq 255 ] && printf "%s,ERROR,ERROR,ERROR\n" "${X}"
     done
