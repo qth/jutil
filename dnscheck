@@ -4,6 +4,16 @@ MAXRTT=0
 MINRTT=999
 SUM=0
 
+die () {
+    printf "Error, exiting: " 1>&2
+    echo "$@" 1>&2
+    exit 255
+}
+
+for X in time bc dig; do
+    which "${X}" >/dev/null 2>&1 || die "required application ${X} not found"
+done
+
 [ -z ${1} ] && exit 1
 
 BCFUNK="define max(a,b){if(a>b){return(a)}else{return(b)}} define min(a,b){if(a>b){return(b)}else{return(a)}}"
