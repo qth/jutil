@@ -2,6 +2,8 @@
 # 2017-02-23 James Boyle
 #  gather RBC summary information from multiple remote hosts
 
+PATH=$PATH:/sbin:/usr/sbin
+
 die () {
     printf "Error, exiting: " 1>&2
     echo "$@" 1>&2
@@ -89,13 +91,15 @@ if [ -n "${OFILE}" ]; then
 fi
 
 printf "RBC status inquiry initiated %s from %s\n" "${DATEY}" "${HOSTNAME}"
-printf "Hostname,OS Version,Up Since,RBC Status\n"
+printf "Hostname,OS Version,Up Since,RBC Status,Manual Reboot\n"
 
 if [ "$INVENTORY" != "localhost" ] ; then
     [ -s "${INVENTORY}" ] || die "bad inventory file"
     for X in $(grep -v '^\s*#\|^\s*$' "$INVENTORY"); do
 	ssh "${X}" sudo /usr/local/sbin/rbc -s 2>/dev/null
-	[ $? -eq 255 ] && printf "%s,ERROR,ERROR,ERROR\n" "${X}"
+	RETVAL="$?"
+	[ $RETVAL -eq 255 ] && printf "%s,ERROR,ERROR,ERROR,ERROR\n" "${X}"
+	[ $RETVAL -eq 1 ] && printf "%s,RBC_ERR,RBC_ERR,RBC_ERR,RBC_ERR\n" "${X}"
     done
 else
     ssh "${INVENTORY}" sudo /usr/local/sbin/rbc -s 2>/dev/null
