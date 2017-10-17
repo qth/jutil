@@ -29,7 +29,7 @@ usage () {
     printf "   -q: suppress output to STDOUT\n" 1>&2
     printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n" 1>&2
     printf "   -s: print a one line status summary in CSV, with the following format\n"
-    printf "        hostname, OS release, uptime, RBC status code, auto-reboot disabled\n" 1>&2
+    printf "        hostname, OS release, uptime, auto-reboot disabled, RBC status code\n" 1>&2
     printf "   EXIT codes:\n" 1>&2
     printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
     printf "%14s %-70s\n" "1:" "reboot required, kernel only" 1>&2
@@ -128,7 +128,12 @@ if [ $SUMMARY -eq 1 ] ; then
     [ $? -eq 0 ] && MANUAL_REBOOT=0
     # get the following the hard way since RHEL 6 uptime does not have the -s flag :(
     UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
-    printf "%s,%s,%s,%s,%s\n" "${HOSTNAME}" "$(cat /etc/redhat-release)" "${UPSINCE}" "${REBOOT_REQUIRED}" "${MANUAL_REBOOT}"
+    printf "%s,%s,%s,%s,%s\n" \
+	   "${HOSTNAME}" \
+	   "$(sed 's|[Rr]ed.*erver|RHEL|;s|release ||' /etc/redhat-release) $(uname -r |sed 's|\.[^.]*$||;s|\.[^.]*$||')" \
+	   "${UPSINCE}" \
+	   "${MANUAL_REBOOT}" \
+	   "${REBOOT_REQUIRED}"
 fi
 
 exit $REBOOT_REQUIRED
