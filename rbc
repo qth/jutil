@@ -125,7 +125,6 @@ fi
 
 if [ $SUMMARY -eq 1 ] ; then
     if grep -q '^\s*[0-9].*/usr/local/sbin/rbc -l -r.*$' /etc/cron.d/auto-reboot 2>&1 ; then MANUAL_REBOOT=0 ; fi
-    #[ $? -eq 0 ] && MANUAL_REBOOT=0
     # get the following the hard way since RHEL 6 uptime does not have the -s flag :(
     UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
     printf "%s,%s,%s,%s,%s,%s\n" \
