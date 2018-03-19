@@ -19,6 +19,6 @@ for X in $(cat $1); do
 	ALIAS=0
     fi
     printf "%-48s : " "${X}"
-    HTTPSTATUS=$(curl -L --connect-timeout 2 -s -o /dev/null -w "%{http_code}" "${X}")
+    HTTPSTATUS=$(curl -H 'User-Agent: test-vhosts-from-httpd-jwb' -L --connect-timeout 2 -s -o /dev/null -w "%{http_code}" "${X}")
     printf "%3s : %5s\n" "${HTTPSTATUS}" "${ALIAS}"
 done
