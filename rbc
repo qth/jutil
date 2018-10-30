@@ -94,7 +94,7 @@ lsof +c0 -b -d DEL 2>/dev/null | \
     grep -v 'DEL.*\.config/dconf/user$\|DEL.*/run/user/.*/dconf/user$\|pulseaudio.*DEL.*/run/user' | \
     grep -v 'Xwayland.*DEL.*/run/user/[0-9]\|java.*DEL.*/var/crashplan/jna-.*tmp$\|caja.*DEL.*gvfs-metadata' | \
     grep -v 'tuned.*DEL.*/ffi\|DEL.*/memfd:pulseaudio\|DEL.*/var/lib/sss/mc/.' | \
-    grep -v 'firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi' | \
+    grep -v 'firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi\|Xorg.*DEL.*/memfd:' | \
     awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
 
 if [ "$(wc -l < ${TMPFILE})" -gt 2 ]; then
