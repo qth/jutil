@@ -1,0 +1,2 @@
+/usr/bin/dnf -R 45 -e 0 -d 0 -y upgrade yum
+/usr/bin/dnf -e 0 -d 0 -y --skip-broken upgrade 
