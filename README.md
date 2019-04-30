@@ -38,3 +38,10 @@ DevOps Utilities You May Find Useful
    * using that saved information, you can run this script elsewhere to test all those vhosts
    * not perfect, but a sanity check to say, this is what happened before and after
 
+6. reboot-test.php
+   * PHP based web page
+   * prints hostname
+   * prints load averages
+   * displays background.jpg
+   * checks if systemd is going to reboot the system soon
+   * returns 503 when reboot is imminent so load balancers can remove system from the pool
