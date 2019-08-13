@@ -14,7 +14,7 @@ DevOps Utilities You May Find Useful
    * Tested on RHEL 7
 
 3. dnscheck
-   * This is a simple utility designed to check DNS server health over time
+   * This is a dumb (unintelligent) utility designed to check DNS server health over time
    * Output can be graphed with gnuplot
    * Designed to be run from cron and STDOUT redirected to a file:
    
