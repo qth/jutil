@@ -131,7 +131,7 @@ if [ $SUMMARY -eq 1 ] ; then
     UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
     printf "%s,%s,%s,%s,%s,%s\n" \
 	   "${HOSTNAME}" \
-	   "$(sed 's|[Rr]ed.*erver|RHEL|;s|release ||' /etc/redhat-release)" \
+	   "$(sed 's|[Rr]ed.*inux|RHEL|;s|\s*[Ss]erver||;s|release\s*||' /etc/redhat-release)" \
 	   "$(uname -r |sed 's|\.[^.]*$||;s|\.[^.]*$||')" \
 	   "${UPSINCE}" \
 	   "${MANUAL_REBOOT}" \
