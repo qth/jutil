@@ -1,0 +1,14 @@
+# /etc/systemd/system/sysstat-collect.service
+# 2020-04-29 James Boyle <james.boyle@canonic.net>
+#
+# Collect all sar data
+
+[Unit]
+Description=SAR (sysstat)
+Documentation=man:sa1(8)
+After=sysstat.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/lib64/sa/sa1 -S XALL 1 1
