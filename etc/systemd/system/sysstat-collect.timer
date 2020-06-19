@@ -1,0 +1,12 @@
+# /etc/systemd/system/sysstat-collect.timer
+# 2020-04-29 James Boyle <jboyle@canonic.net>
+#  Run sar every minute
+
+[Unit]
+Description=Run sar every minute
+
+[Timer]
+OnCalendar=*:00/1
+
+[Install]
+WantedBy=sysstat.service
