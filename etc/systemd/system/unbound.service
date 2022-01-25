@@ -2,13 +2,9 @@
 Description=Unbound recursive Domain Name Server
 After=syslog.target network.target
 After=unbound-keygen.service
-Wants=unbound-keygen.service
-Wants=unbound-anchor.timer
 After=unbound-anchor.timer
 Before=nss-lookup.target
 Before=nfs-client.target
-WantedBy=nfs-client.target
-WantedBy=nss-lookup.target
 
 [Service]
 Type=simple
