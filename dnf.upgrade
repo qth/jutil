@@ -11,9 +11,9 @@ ERRORS=0
 printf "${DATEY}\nThe following errors were generated while running dnf.upgrade on ${HOST}\n\n" > ${TMPFILE}
 
 printf "### dnf -y upgrade dnf ###\n" >>${TMPFILE}
-/usr/bin/dnf -R 45 -e 0 -d 0 -y upgrade dnf 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+/usr/bin/dnf -R 45 -y upgrade dnf 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
 printf "\n### dnf -y --skip-broken upgrade ###\n" >>${TMPFILE}
-/usr/bin/dnf -e 0 -d 0 -y --skip-broken upgrade 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+/usr/bin/dnf -y --skip-broken upgrade 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
 
 if [ ${ERRORS} -ne 0 ]; then
    mail -s "${SUBJECT}" "${MAILTO}" < ${TMPFILE}
