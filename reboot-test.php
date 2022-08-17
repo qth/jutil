@@ -40,7 +40,7 @@ if ( file_exists ( "/var/run/systemd/shutdown/scheduled" ) ) {
    #print_r ($contents);
    $now = date("U");
    $diff = ( round ( $contents['USEC'] / 1000000 ) ) - $now;
-   $response = "System rebooting in $diff seconds\n";
+   $response = "Error 503 - Service Unavailable: System rebooting in $diff seconds\n";
    if ( ( 0 < $diff) && ( $diff < $grace ) ) {
       http_response_code(503);
    } else {
