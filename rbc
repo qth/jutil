@@ -1,5 +1,7 @@
 #!/bin/bash
 
+RBC_VERSION="1.3"
+
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
 
 EMAIL_OWNER=0
@@ -30,6 +32,7 @@ usage () {
     printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n" 1>&2
     printf "   -s: print a one line status summary in CSV, with the following format\n"
     printf "        hostname, OS release, uptime, auto-reboot disabled, RBC status code\n" 1>&2
+    printf "   -V: display version and exit\n" 1>&2
     printf "   EXIT codes:\n" 1>&2
     printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
     printf "%14s %-70s\n" "1:" "reboot required, kernel only" 1>&2
@@ -37,6 +40,10 @@ usage () {
     printf "%14s %-70s\n" "3:" "reboot required, kernel & processes" 1>&2
     printf "%14s %-70s\n" "254:" "printed help summary and exited" 1>&2
     printf "%14s %-70s\n" "255:" "failed to run due to other error" 1>&2
+}
+
+version () {
+    printf "RBC version ${RBC_VERSION}\n"
 }
 
 email_owner () {
@@ -59,6 +66,14 @@ TMPFILE=/tmp/"$(dd if=/dev/urandom bs=1 count=256 2>/dev/null |tr -c -d '0-9a-f'
 
 for X in ${1:+"$@"}; do
     case "${X}" in
+	(-h|--help)
+	    usage
+	    exit 254
+	    ;;
+	(-V|--version)
+	    version
+	    exit 0
+	    ;;
 	-l)
 	    SYSLOG=1
 	    ;;
@@ -75,10 +90,6 @@ for X in ${1:+"$@"}; do
 	-s)
 	    QUIET=1
 	    SUMMARY=1
-	    ;;
-	(-h|--help)
-	    usage
-	    exit 254
 	    ;;
 	*)
 	    usage
@@ -97,6 +108,7 @@ lsof +c0 -b -d DEL 2>/dev/null | \
     grep -v 'firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi\|DEL.*/memfd:xorg\|DEL.*/memfd:dbus' | \
     grep -v 'DEL.*/memfd:xshmfence\|DEL.*/#[0-9]*\|DEL.*/i915\|memfd:\(mozilla-ipc\|pipewire\)' | \
     grep -v 'DEL.*/memfd:libffi\|DEL.*/home/.*/.local/share/gvfs-metadata|DEL.*/jenkins/.cache/' | \
+    grep -v '/.cache/JNA/temp/' | \
     awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
 
 if [ "$(wc -l < ${TMPFILE})" -gt 2 ]; then
