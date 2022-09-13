@@ -11,6 +11,7 @@ REBOOT_REQUIRED=0
 SUMMARY=0
 SYSLOG=0
 MANUAL_REBOOT=1
+REBOOT_DOW="X"
 
 die () {
     printf "Error, exiting: " 1>&2
@@ -31,7 +32,7 @@ usage () {
     printf "   -q: suppress output to STDOUT\n" 1>&2
     printf "   -r: reboot the system in 30 minutes if reboot is required, SYSLOG is forced\n" 1>&2
     printf "   -s: print a one line status summary in CSV, with the following format\n"
-    printf "        hostname, OS release, uptime, auto-reboot disabled, RBC status code\n" 1>&2
+    printf "        hostname, OS release, uptime, auto-reboot disabled, RBC status code, reboot day of week\n" 1>&2
     printf "   -V: display version and exit\n" 1>&2
     printf "   EXIT codes:\n" 1>&2
     printf "%14s %-70s\n" "0:" "reboot not required" 1>&2
@@ -139,16 +140,20 @@ if [ $REBOOT_REQUIRED -ne 0 ]; then
 fi
 
 if [ $SUMMARY -eq 1 ] ; then
-    if grep -q '^\s*[0-9].*/usr/local/sbin/rbc -l -r.*$' /etc/cron.d/auto-reboot 2>&1 ; then MANUAL_REBOOT=0 ; fi
+    if [ -f /etc/cron.d/auto-reboot ] ; then 
+	if grep -q '^\s*[0-9].*/usr/.*/\?sbin/rbc.*-r.*$' /etc/cron.d/auto-reboot 2>&1 ; then MANUAL_REBOOT=0 ; fi
+	if [ $MANUAL_REBOOT -eq 0 ] ; then REBOOT_DOW="$( awk '{ print $5 }' < /etc/cron.d/auto-reboot)" ; fi
+    fi
     # get the following the hard way since RHEL 6 uptime does not have the -s flag :(
     UPSINCE=$(date -d @$(( $(date +%s) - $(sed 's|\..*$||' /proc/uptime) )) +%Y-%m-%d\ %H:%M:%S)
-    printf "%s,%s,%s,%s,%s,%s\n" \
+    printf "%s,%s,%s,%s,%s,%s,%s\n" \
 	   "${HOSTNAME}" \
 	   "$(sed 's|[Rr]ed.*inux|RHEL|;s|\s*[Ss]erver||;s|release\s*||' /etc/redhat-release)" \
 	   "$(uname -r |sed 's|\.[^.]*$||;s|\.[^.]*$||')" \
 	   "${UPSINCE}" \
 	   "${MANUAL_REBOOT}" \
-	   "${REBOOT_REQUIRED}"
+	   "${REBOOT_REQUIRED}" \
+	   "${REBOOT_DOW}"
 fi
 
 exit $REBOOT_REQUIRED
