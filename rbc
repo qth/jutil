@@ -109,7 +109,7 @@ lsof +c0 -b -d DEL 2>/dev/null | \
     grep -v 'firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi\|DEL.*/memfd:xorg\|DEL.*/memfd:dbus' | \
     grep -v 'DEL.*/memfd:xshmfence\|DEL.*/#[0-9]*\|DEL.*/i915\|memfd:\(mozilla-ipc\|pipewire\)' | \
     grep -v 'DEL.*/memfd:libffi\|DEL.*/home/.*/.local/share/gvfs-metadata|DEL.*/jenkins/.cache/' | \
-    grep -v '/.cache/JNA/temp/' | \
+    grep -v '/.cache/JNA/temp/\|/usr/lib/fontconfig/cache/\|/usr/share/.*\.cache' | \
     awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
 
 if [ "$(wc -l < ${TMPFILE})" -gt 2 ]; then
