@@ -1,0 +1,28 @@
+#!/bin/bash
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+AUDIT_PATH="/var/log/audit"  # Path to auditd's logs
+TIMESPEC="%Y%m%d-%H%M%S"     # Customize timestamp format as desired, per `man date`
+KEEP_DAYS=180                # Maximum age in days of log files to keep
+ROTATE_TIME=5                # Amount of time in seconds to wait for auditd to rotate its logs. Adjust this as necessary
+PIDFILE="/run/auditd.pid"    # PID file for auditd
+
+process_logs() {
+    for file in $(find ${AUDIT_PATH}/ -regextype posix-extended -regex "${AUDIT_PATH}/audit.log.[0-9]+"); do
+        timestamp=$(ls -l --time-style="+${TIMESPEC}" ${file} | awk '{print $6}')
+        newfile=${file%.[0-9]*}.${timestamp}
+        mv ${file} ${newfile}
+        zstd --rm --ultra -22 -T0 -q ${newfile}
+	touch -m -d ${timestamp%%-[0-9]*} ${newfile}.zst
+    done
+}
+
+prune_logs() {
+    find ${AUDIT_PATH}/ -regextype posix-extended -regex '.*audit\.log\..*(xz|gz|bz2|zst)$' -mtime +${KEEP_DAYS} -delete
+}
+
+process_logs
+kill -USR1 $(cat ${PIDFILE})
+sleep $ROTATE_TIME
+process_logs
+prune_logs

@@ -96,13 +96,13 @@ printf "Hostname,OS Version,Up Since,RBC Status,Manual Reboot\n"
 if [ "$INVENTORY" != "localhost" ] ; then
     [ -s "${INVENTORY}" ] || die "bad inventory file"
     for X in $(grep -v '^\s*#\|^\s*$' "$INVENTORY"); do
-	ssh "${X}" sudo /usr/local/sbin/rbc -s 2>/dev/null
+	ssh "${X}" sudo /usr/sbin/rbc -s 2>/dev/null
 	RETVAL="$?"
 	[ $RETVAL -eq 255 ] && printf "%s,ERROR,ERROR,ERROR,ERROR\n" "${X}"
 	[ $RETVAL -eq 1 ] && printf "%s,RBC_ERR,RBC_ERR,RBC_ERR,RBC_ERR\n" "${X}"
     done
 else
-    ssh "${INVENTORY}" sudo /usr/local/sbin/rbc -s 2>/dev/null
+    ssh "${INVENTORY}" sudo /usr/sbin/rbc -s 2>/dev/null
 fi
 
 if [ -n "$EMAIL" ]; then
