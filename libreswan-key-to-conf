@@ -7,11 +7,11 @@ sub usage {
     $0 =~ /([^\/]+)$/;
     my $name = $&;
     print "$name [host+keyfile]
-    each line of host+keyfile should contain the short hostname,
-    IP address,
-    and the key returned from 'ipsec showhostkey --left'\n
+    each line of host+keyfile should contain the short hostname, \
+    IP address, and the key returned from 'ipsec showhostkey --left'\n
+    The values should be comma separated.\n
     This program then outputs ipsec.conf content to support
-    all of the connections.
+    a mesh of connections between all listed hosts.
     \n";
     exit 1;
 }
