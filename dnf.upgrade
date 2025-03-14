@@ -7,13 +7,25 @@ HOST="$(/bin/hostname -s)"
 SUBJECT="Error running dnf on ${HOST}, ${DATEY}"
 TMPFILE=/tmp/"$(dd if=/dev/urandom bs=1 count=256 2>/dev/null |tr -c -d '0-9a-f' |cut -c-7)"
 ERRORS=0
+DNF_MAJOR="$(dnf --version |head -1 |sed 's|^.* ||;s|\(.\).*$|\1|')"
+MAX_DELAY="45"
 
 printf "${DATEY}\nThe following errors were generated while running dnf.upgrade on ${HOST}\n\n" > ${TMPFILE}
 
 printf "### dnf -y upgrade dnf ###\n" >>${TMPFILE}
-/usr/bin/dnf -R 45 -y upgrade dnf 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+if [ ${DNF_MAJOR} -lt 5 ]; then
+    /usr/bin/dnf -R ${MAX_DELAY} -y upgrade dnf 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+else
+    /usr/bin/sleep $(( $(dd if=/dev/urandom bs=4 count=1 2>/dev/null | od -tu -w4 |head -1 |cut -c9-) % ( ${MAX_DELAY} * 60 )  ))
+    /usr/bin/dnf -q --setopt=skip_broken=true -y upgrade dnf5 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+fi
+
 printf "\n### dnf -y --skip-broken upgrade ###\n" >>${TMPFILE}
-/usr/bin/dnf -y --skip-broken upgrade 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+if [ ${DNF_MAJOR} -lt 5 ]; then
+    /usr/bin/dnf -y --skip-broken upgrade 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+else
+    /usr/bin/dnf -q --setopt=skip_broken=true --setopt=skip_unavailable=true -y upgrade 2>>${TMPFILE} >/dev/null || (( ERRORS++ ))
+fi
 
 if [ ${ERRORS} -ne 0 ]; then
    mail -s "${SUBJECT}" "${MAILTO}" < ${TMPFILE}
