@@ -1,0 +1,27 @@
+#!/bin/bash
+DNF_MAJOR="$(dnf --version |head -1 |sed 's|^.* ||;s|\(.\).*$|\1|')"
+MYRBC="$(which rbc)"
+
+if [ "$(echo "status dir" | /usr/sbin/bconsole | grep 'No Jobs running.')" == "No Jobs running." ] ; then
+   # echo Bacula not busy
+   # echo shutdown bacula
+   /usr/bin/systemctl --quiet stop bacula-dir
+   /usr/bin/systemctl --quiet stop bacula-sd
+   /usr/bin/systemctl --quiet stop bacula-fd
+   
+   # echo run upgrade
+   if [ ${DNF_MAJOR} -lt 5 ]; then
+       /usr/bin/dnf -e 0 -d 0 -y upgrade dnf
+       /usr/bin/dnf -e 0 -d 0 -y --skip-broken upgrade
+   else
+       /usr/bin/dnf -q --skip-broken -y upgrade dnf5
+       /usr/bin/dnf -q --setopt=skip_broken=true --setopt=skip_unavailable=true -y upgrade
+   fi
+
+   # reboot if required (+30min),
+   # otherwise start Bacula
+   ${MYRBC} -q -r
+   if [ ! -f /var/run/systemd/shutdown/scheduled ] ; then
+       /usr/bin/systemctl --quiet start bacula-dir bacula-sd bacula-fd
+   fi
+fi
