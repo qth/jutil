@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RBC_VERSION="1.3"
+RBC_VERSION="1.4"
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
 
@@ -12,6 +12,18 @@ SUMMARY=0
 SYSLOG=0
 MANUAL_REBOOT=1
 REBOOT_DOW="X"
+
+LSOF_FILTER='\s/SYSV\|/\[aio\]$\|/dev/shm/.\+\|DEL.\+/tmp/.\+\|/var/lib/sss/mc/\(initgroups\|passwd\)'
+LSOF_FILTER+='\|DEL.*\.config/dconf/user$\|DEL.*/run/user/.*/dconf/user$\|pulseaudio.*DEL.*/run/user'
+LSOF_FILTER+='\|Xwayland.*DEL.*/run/user/[0-9]\|java.*DEL.*/var/crashplan/jna-.*tmp$\|caja.*DEL.*gvfs-metadata'
+LSOF_FILTER+='\|tuned.*DEL.*/ffi\|DEL.*/var/lib/sss/mc/.'
+LSOF_FILTER+='\|firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi'
+LSOF_FILTER+='\|DEL.*/#[0-9]*\|DEL.*/i915'
+LSOF_FILTER+='\|DEL.*/home/.*/.local/share/gvfs-metadata|DEL.*/jenkins/.cache/'
+LSOF_FILTER+='\|/.cache/JNA/temp/\|/usr/lib/fontconfig/cache/\|/usr/share/.*\.cache'
+LSOF_FILTER+='\|DEL.*/memfd:\(dbus\|libffi\|lp_dma_buf\|mozilla-ipc\|pipewire\|pulseaudio\|xshmfence\|xorg\)'
+LSOF_FILTER+='\|DEL.*/memfd.*QtQml'
+LSOF_FILTER+='\|/home/.*/.cache/\|/root/.cache/'
 
 die () {
     printf "Error, exiting: " 1>&2
@@ -102,15 +114,9 @@ done
 [ "$TMPFILE" == "/tmp/" ] && die
 echo "### ${HOSTNAME}: Reboot automation notice: ${DATEY} ###" > "${TMPFILE}"
 lsof +c0 -b -d DEL 2>/dev/null | \
-    grep -v '\s/SYSV\|/\[aio\]$\|/dev/shm/.\+\|DEL.\+/tmp/.\+\|/var/lib/sss/mc/\(initgroups\|passwd\)' | \
-    grep -v 'DEL.*\.config/dconf/user$\|DEL.*/run/user/.*/dconf/user$\|pulseaudio.*DEL.*/run/user' | \
-    grep -v 'Xwayland.*DEL.*/run/user/[0-9]\|java.*DEL.*/var/crashplan/jna-.*tmp$\|caja.*DEL.*gvfs-metadata' | \
-    grep -v 'tuned.*DEL.*/ffi\|DEL.*/memfd:pulseaudio\|DEL.*/var/lib/sss/mc/.' | \
-    grep -v 'firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi\|DEL.*/memfd:xorg\|DEL.*/memfd:dbus' | \
-    grep -v 'DEL.*/memfd:xshmfence\|DEL.*/#[0-9]*\|DEL.*/i915\|memfd:\(mozilla-ipc\|pipewire\)' | \
-    grep -v 'DEL.*/memfd:libffi\|DEL.*/home/.*/.local/share/gvfs-metadata|DEL.*/jenkins/.cache/' | \
-    grep -v '/.cache/JNA/temp/\|/usr/lib/fontconfig/cache/\|/usr/share/.*\.cache' | \
-    awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | column -t >> "${TMPFILE}"
+    grep -v "${LSOF_FILTER}" | \
+    awk 'NR==1 || !/dev\/zero/ {print $2,$1,$4,$NF}' | \
+    column -t >> "${TMPFILE}"
 
 if [ "$(wc -l < ${TMPFILE})" -gt 2 ]; then
     (( REBOOT_REQUIRED+=2 ))
