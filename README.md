@@ -2,7 +2,7 @@
 DevOps Utilities You May Find Useful
 
 1. rbc (Reboot checker)
-   * On RHEL 7 / CentOS 7 / Fedora requires: coreutils gawk hostname lsof mailx rpm sed util-linux
+   * On RHEL / CentOS / Fedora requires: coreutils gawk hostname lsof mailx rpm sed util-linux
    * Default is to check if the system needs to be rebooted
    * Add a flag to alert via email, log to syslog, or to reboot the system if required
    * Tested on Fedora / RHEL
@@ -11,7 +11,7 @@ DevOps Utilities You May Find Useful
    * Take a list of names, IPs, and RSA public keys and output libreswan configuration
    * A separate IPSec SA is created between each of the hosts listed in the input file
    * Growth is #conf_items = (num_hosts*(num_hosts-1))/2
-   * Tested on RHEL 7
+   * Tested on RHEL 7 / 8 / 9
 
 3. dnscheck
    * This is a dumb (unintelligent) utility designed to check DNS server health over time
@@ -27,9 +27,9 @@ DevOps Utilities You May Find Useful
    * Place it in /usr/local/libexec
    * This can be called from cron at any schedule cron can perform, e.g.:
 
-   ```00 07  *  *  *  root  /usr/local/libexec/yum.upgrade```
+   ```00 07  *  *  *  root  [ $(/usr/bin/date "+\%d") -le 07 ] && /usr/local/libexec/dnf.upgrade```
 
-   * Works on RHEL & CentOS 5, 6, & 7, the same way
+   * Works on RHEL & CentOS 8, 9 the same way
    * Now sends email when error is generated (yum.upgrade)
 
 5. test-vhosts-from-httpd
