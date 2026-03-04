@@ -19,10 +19,10 @@ LSOF_FILTER+='\|Xwayland.*DEL.*/run/user/[0-9]\|java.*DEL.*/var/crashplan/jna-.*
 LSOF_FILTER+='\|tuned.*DEL.*/ffi\|DEL.*/var/lib/sss/mc/.'
 LSOF_FILTER+='\|firewalld.*DEL.*/ffi\|rhsmd.*DEL.*/ffi'
 LSOF_FILTER+='\|DEL.*/#[0-9]*\|DEL.*/i915'
-LSOF_FILTER+='\|DEL.*/home/.*/.local/share/gvfs-metadata|DEL.*/jenkins/.cache/'
+LSOF_FILTER+='\|DEL.*/home/.*/.local/share/gvfs-metadata\|DEL.*/jenkins/.cache/'
 LSOF_FILTER+='\|/.cache/JNA/temp/\|/usr/lib/fontconfig/cache/\|/usr/share/.*\.cache'
 LSOF_FILTER+='\|DEL.*/memfd:\(dbus\|libffi\|lp_dma_buf\|mozilla-ipc\|pipewire\|pulseaudio\|xshmfence\|xorg\)'
-LSOF_FILTER+='\|DEL.*/memfd.*QtQml'
+LSOF_FILTER+='\|DEL.*/memfd:\(.*QtQml\|glycin-frame\)'
 LSOF_FILTER+='\|/home/.*/.cache/\|/root/.cache/'
 
 die () {
